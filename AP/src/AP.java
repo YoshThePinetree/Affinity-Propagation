@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -20,19 +21,19 @@ public class AP {
 		///////////////////////////////
 		// Paramter Set & Initiation //
 		///////////////////////////////
-		int c;								// the number of clusters
-		int n=data1.length;					// the number of elements
-		int maxite=300;						// the number of maximum iteration
-		double lamda=0.9;					// the damping factor
-		int rseed=1;						// random seed
-		String dist="Euclid";				// the distance metric type
-		String pref="Median";				// the preference type (method to calc the diagonal element of s)
-		double F [] = new double [maxite];	// Objective function value
-		double s [][] = new double [n][n];	// similarity matrix
-		double r [][] = new double [n][n];	// responsibility matrix
-		double a [][] = new double [n][n];	// availability matrix
-		double rprop [][] = new double [n][n];	// availability matrix (propagation)
-		double aprop [][] = new double [n][n];	// availability matrix (propagation)
+		int n=data1.length;						// the number of elements
+		int maxite=1000;							// the number of maximum iteration
+		double lamda=0.9;						// the damping factor
+		int rseed=1;							// random seed
+		String dist="Euclid";					// the distance metric type
+		String pref="Median";					// the preference type (method to calc the diagonal element of s)
+		double F [] = new double [maxite];		// Objective function value
+		double s [][] = new double [n][n];		// similarity matrix
+		double r [][] = new double [n][n];		// responsibility matrix
+		double a [][] = new double [n][n];		// availability matrix
+		double rho [][] = new double [n][n];	// availability matrix (propagation)
+		double alpha [][] = new double [n][n];	// availability matrix (propagation)
+		int c [] = new int [n];					// the clustering vector
 
 		// data normalization
 		double data[][] = new double[n][d];
@@ -40,21 +41,53 @@ public class AP {
 //		data=NormStd.Standardization(data1);
 		data=data1;
 
+		// create instance
 		Sfmt rnd = new Sfmt(rseed);
-		s = Similarity(data,dist,pref);
+		APMat apmat = new APMat();
+		Mat mat = new Mat();
 
-		/*
-		for(int i=0; i<3; i++) {
-			for(int j=0; j<3; j++) {
-				if(j<3-1) {
-					System.out.printf("%.3f", s[i][j]);
+		s = apmat.Calcsim(data,dist,pref);
+
+		for(int i=0; i<10; i++) {
+			for(int j=0; j<10; j++) {
+				if(j<10-1) {
+					System.out.printf("%.3f ", s[i][j]);
 				}else {
 					System.out.printf("%.3f\n", s[i][j]);
 				}
 			}
 		}
-		*/
+		System.out.println();
 
+
+		////////////////////////////////////////////////////////////
+		// Recursive Cauclation of Responsibiliy and Availability //
+		// (the main loop of AP)                                  //
+		////////////////////////////////////////////////////////////
+
+		// AP matrix initiation
+		for(int i=0; i<n; i++) {
+			Arrays.fill(r[i],0);
+			Arrays.fill(a[i],0);
+			Arrays.fill(rho[i],0);
+			Arrays.fill(alpha[i],0);
+		}
+
+		int ite=0;	// iteration counter
+		// loop
+		while(ite<maxite) {
+			rho = apmat.Calcrho(s,a);
+			alpha = apmat.Calcalpha(r);
+			r = mat.WeightedSum(rho, r, 1-lamda, lamda);
+			a = mat.WeightedSum(alpha, a, 1-lamda, lamda);
+			ite=ite+1;
+		}
+
+		c = apmat.Clustering(r, a);
+
+		for(int i=0; i<n; i++) {
+			System.out.printf("%d\n",c[i]);
+		}
 		//
 
 
@@ -226,111 +259,7 @@ public class AP {
 	        }
 	    }
 
-	    private static double[][] Similarity(double X[][], String dist, String pretype) {
-	    	int n = X.length;		// the number of elements
-	    	int d = X[0].length;	// the number of dimension
-	    	double S [][] = new double [n][n] ;
-			double xsum=0;
-			double sdiag=0;	// the value given in the diagonal elements of the matrix
-			Mat mat = new Mat();
 
-			switch (dist) {
-			case "Euclid":	// Metric: Euclidean distance
-
-				for(int i=0; i<n; i++) {
-					for(int j=i+1; j<n; j++) {
-						for(int k=0; k<d; k++) {
-							xsum = xsum + Math.pow((X[i][k]-X[j][k]),2);
-						}
-						S[i][j]=Math.sqrt(xsum);
-					}
-				}
-
-				switch (pretype) {
-				case "Median":
-					sdiag = mat.FindMedian(S);
-					break;
-				case "Min":
-					sdiag = mat.FindMin(S);
-					break;
-				}
-
-				S = mat.CopyUpLow(S);			// copy the elements of upper triangle to lower triangle
-				S = mat.AssignDiag(S,sdiag);	// assign sdiag into the all diagonal elements of S
-				S = mat.ScalaMultiply(S, -1);	// negativenize
-
-				break;
-				/*
-			case "SEuclid":	// Metric: Scaled Euclidean distance
-				double[] X = new double[nd];
-				double[] sigma = new double[nf];
-				double val;
-
-				StatCalc stat = new StatCalc();
-				for(int i=0; i<nf; i++) {
-					X = getCul(data,i);
-					sigma[i] = stat.Var(X);
-				}
-
-				for(int i=0; i<nd; i++) {
-					for(int j=count; j<nd; j++) {
-						for(int k=0; k<nf; k++) {
-							val = ((Math.pow((data[i][k]-data[j][k]),2)) / sigma[k]);
-							if(Double.isNaN(val) == false) {
-								xsum = xsum + val;
-							}
-						}
-						D[i][j]=Math.sqrt(xsum);
-						xsum = 0;
-					}
-					count = count+1;
-				}
-				D = Dissim.matUcopy2L(D);
-
-				break;
-			case "City":	// Metric: city block distance
-
-				for(int i=0; i<nd; i++) {
-					for(int j=count; j<nd; j++) {
-						for(int k=0; k<nf; k++) {
-							xsum = xsum + Math.abs(data[i][k]-data[j][k]);
-						}
-						D[i][j] = xsum;
-						xsum = 0;
-					}
-					count = count+1;
-				}
-				D = Dissim.matUcopy2L(D);
-
-				break;
-			case "Chebyshev":	// Metric: Chebyshev distance
-				double dmax = 0;
-				double a = 0;
-
-				for(int i=0; i<nd; i++) {
-					for(int j=count; j<nd; j++) {
-						for(int k=0; k<nf; k++) {
-							a = Math.abs(data[i][k]-data[j][k]);
-							if(dmax < a) {
-								dmax = a;
-							}
-						}
-						D[i][j] = dmax;
-						dmax=0;
-					}
-					count=count+1;
-				}
-				D = Dissim.matUcopy2L(D);
-
-				break;
-			case "Mahalanobis":
-				break;
-			case "Cosine":
-				break;
-				*/
-			}
-			return S;
-		}
 
 
 

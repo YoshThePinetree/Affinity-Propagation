@@ -14,6 +14,28 @@ public class Mat {
 			return X;
 		}
 
+		public double[][] Sum(double X[][], double Y[][]){
+			int n=X.length;
+			double Z [][] = new double [n][n];
+			for(int i=0; i<n; i++) {
+		    	for(int j=0; j<n; j++) {
+		    		Z[j][i] = X[i][j] + Y[i][j];
+		    	}
+	    	}
+	    	return Z;
+		}
+
+		public double[][] WeightedSum(double X[][], double Y[][], double a, double b){
+			int n=X.length;
+			double Z [][] = new double [n][n];
+			for(int i=0; i<n; i++) {
+		    	for(int j=0; j<n; j++) {
+		    		Z[j][i] = (a*X[i][j]) + (b*Y[i][j]);
+		    	}
+	    	}
+	    	return Z;
+		}
+
 	 	public double[][] CopyUpLow(double X[][]){
 	    	int n=X.length;
 	    	double Y [][] = new double [n][n];
@@ -45,8 +67,13 @@ public class Mat {
 				}
 	    	}
 
+	    	//for(Double str :list){
+	    	//	  System.out.println(str);
+    		//}
+
 	    	Double[] array = list.toArray(new Double[list.size()]);
 	    	Arrays.sort(array);
+
 	    	int m=array.length/2;
 
 	    	if(0 != (array.length%2)){
@@ -71,5 +98,33 @@ public class Mat {
 	    	}
 
 	    	return min;
+	    }
+
+	    public double FindVecMaxExp(double X[], int m){
+	    	int n=X.length;
+	    	double max = -999999999;
+
+	    	for(int i=0; i<n; i++) {
+	    		if(i!=m) {
+		    		max = Math.max(max, X[i]);
+	    		}
+	    	}
+
+	    	return max;
+	    }
+
+	    public int FindVecArgMax(double X[]){
+	    	int n=X.length;
+	    	int ind=0;
+	    	double max = -999999999;
+
+	    	for(int i=0; i<n; i++) {
+	    		if(X[i]>max) {
+	    			max=X[i];
+	    			ind=i;
+	    		}
+	    	}
+
+	    	return ind;
 	    }
 }
