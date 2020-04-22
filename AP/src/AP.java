@@ -22,18 +22,19 @@ public class AP {
 		// Paramter Set & Initiation //
 		///////////////////////////////
 		int n=data1.length;						// the number of elements
-		int maxite=1000;							// the number of maximum iteration
-		double lamda=0.9;						// the damping factor
+		int maxite=1000;						// the number of maximum iteration
+		double lamda=0.90;						// the damping factor
+		double wp=0.241;							// the weight of preference
 		int rseed=1;							// random seed
 		String dist="Euclid";					// the distance metric type
 		String pref="Median";					// the preference type (method to calc the diagonal element of s)
-		double F [] = new double [maxite];		// Objective function value
 		double s [][] = new double [n][n];		// similarity matrix
 		double r [][] = new double [n][n];		// responsibility matrix
 		double a [][] = new double [n][n];		// availability matrix
 		double rho [][] = new double [n][n];	// availability matrix (propagation)
 		double alpha [][] = new double [n][n];	// availability matrix (propagation)
 		int c [] = new int [n];					// the clustering vector
+		int carc [][] = new int [maxite][n];	// the clustering vector archive
 
 		// data normalization
 		double data[][] = new double[n][d];
@@ -46,40 +47,45 @@ public class AP {
 		APMat apmat = new APMat();
 		Mat mat = new Mat();
 
-		s = apmat.Calcsim(data,dist,pref);
-
-		for(int i=0; i<10; i++) {
-			for(int j=0; j<10; j++) {
-				if(j<10-1) {
-					System.out.printf("%.3f ", s[i][j]);
-				}else {
-					System.out.printf("%.3f\n", s[i][j]);
-				}
-			}
-		}
-		System.out.println();
-
+		s = apmat.Calcsim(data,dist,pref,wp);	// similarity calculation
 
 		////////////////////////////////////////////////////////////
 		// Recursive Cauclation of Responsibiliy and Availability //
 		// (the main loop of AP)                                  //
 		////////////////////////////////////////////////////////////
 
-		// AP matrix initiation
+		// AP matrix initiation by zero
 		for(int i=0; i<n; i++) {
 			Arrays.fill(r[i],0);
 			Arrays.fill(a[i],0);
 			Arrays.fill(rho[i],0);
 			Arrays.fill(alpha[i],0);
+			Arrays.fill(carc[i],0);
 		}
+		Arrays.fill(c,0);
 
 		int ite=0;	// iteration counter
+		boolean ctr=false;
+
 		// loop
-		while(ite<maxite) {
+		while(ite<maxite && ctr==false) {
 			rho = apmat.Calcrho(s,a);
 			alpha = apmat.Calcalpha(r);
 			r = mat.WeightedSum(rho, r, 1-lamda, lamda);
 			a = mat.WeightedSum(alpha, a, 1-lamda, lamda);
+			c = apmat.Clustering(r, a);
+
+			for(int i=0; i<n; i++) {
+				carc[ite][i] = c[i];
+			}
+
+			if(ite==0) {
+				ctr=false;
+			}else {
+				ctr=apmat.CheckConverge(carc[ite-1],carc[ite]);
+			}
+			System.out.println("Iteration: "+ (ite+1));
+
 			ite=ite+1;
 		}
 
@@ -88,8 +94,6 @@ public class AP {
 		for(int i=0; i<n; i++) {
 			System.out.printf("%d\n",c[i]);
 		}
-		//
-
 
 	}
 

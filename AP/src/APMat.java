@@ -1,8 +1,11 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class APMat {
 	Mat mat = new Mat();
 
-	public double[][] Calcsim(double X[][], String dist, String pretype) {
+	public double[][] Calcsim(double X[][], String dist, String pretype, double wp) {
     	int n = X.length;		// the number of elements
     	int d = X[0].length;	// the number of dimension
     	double S [][] = new double [n][n] ;
@@ -31,6 +34,7 @@ public class APMat {
 				sdiag = mat.FindMin(S);
 				break;
 			}
+			sdiag = sdiag * wp;		// weighting the preference
 
 			S = mat.CopyUpLow(S);			// copy the elements of upper triangle to lower triangle
 			S = mat.AssignDiag(S,sdiag);	// assign sdiag into the all diagonal elements of S
@@ -165,13 +169,67 @@ public class APMat {
 		int n=R.length;
 		int C[] = new int [n];
 		double RA [][] = new double [n][n];
-		RA = mat.Sum(R, A); // sum of similarity anf availability
+		boolean exmplr [] = new boolean [n];		// exempler vector
+		RA = mat.Sum(R, A); 						// sum of similarity and availability
+		List<Integer> list = new ArrayList<Integer>();
 
+
+		for(int i=0; i<n; i++) {	// if diag(r+a) > 0 then the node will be an exempler
+			if(RA[i][i]>0) {
+				exmplr[i]=true;
+				list.add(i);
+			}else {
+				exmplr[i]=false;
+			}
+		}
+
+		double RA1[][] = new double [n][list.size()];	// get the RA only exempler
 		for(int i=0; i<n; i++) {
-			C[i] = mat.FindVecArgMax(RA[i]);
+			for(int j=0; j<list.size(); j++) {
+				RA1[i][j]=RA[i][list.get(j)];
+			}
+		}
+
+		int tmp;
+		for(int i=0; i<n; i++) {	// determine cluster partition
+			if(exmplr[i]==true) {
+				C[i] = i;
+			}else {
+				tmp = mat.FindVecArgMax(RA1[i]);
+				C[i] = list.get(tmp);
+			}
 		}
 
 		return C;
+	}
+
+	public boolean CheckConverge(int C[], int C1[]) {
+		boolean a;
+		int n=C.length;
+		int comp [] = new int [n];
+		Arrays.fill(comp,0);
+
+		for(int i=0; i<n; i++) {
+			if(C[i]!=C1[i]) {
+				comp[i]=1;
+			}
+		}
+		if(SumVecEleAll(comp)==0) {
+			a=true;		// clusteirng converged
+		}else {
+			a=false;
+		}
+
+		return a;
+	}
+
+	private static int SumVecEleAll(int X[]) {
+		int n=X.length;
+		int sum=0;
+		for(int i=0; i<n; i++) {
+			sum = sum + X[i];
+		}
+		return sum;
 	}
 
 
