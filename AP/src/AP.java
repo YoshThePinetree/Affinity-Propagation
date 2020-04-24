@@ -22,9 +22,10 @@ public class AP {
 		// Paramter Set & Initiation //
 		///////////////////////////////
 		int n=data1.length;						// the number of elements
-		int maxite=1000;						// the number of maximum iteration
-		double lamda=0.90;						// the damping factor
-		double wp=0.241;							// the weight of preference
+		int maxite=300;							// the number of maximum iteration
+		int ccount=30;							// the converge counter
+		double lamda=0.9;						// the damping factor
+		double wp=4.0;						// the weight of preference
 		int rseed=1;							// random seed
 		String dist="Euclid";					// the distance metric type
 		String pref="Median";					// the preference type (method to calc the diagonal element of s)
@@ -66,8 +67,9 @@ public class AP {
 
 		int ite=0;	// iteration counter
 		boolean ctr=false;
+		int count=0;
+//******AP loop**********************************************************************
 
-		// loop
 		while(ite<maxite && ctr==false) {
 			rho = apmat.Calcrho(s,a);
 			alpha = apmat.Calcalpha(r);
@@ -83,17 +85,38 @@ public class AP {
 				ctr=false;
 			}else {
 				ctr=apmat.CheckConverge(carc[ite-1],carc[ite]);
+				if(count<ccount && ctr==true) {
+					ctr=false;
+					count++;
+				}else {
+					count=0;
+				}
 			}
 			System.out.println("Iteration: "+ (ite+1));
 
 			ite=ite+1;
 		}
 
-		c = apmat.Clustering(r, a);
-
+//***********************************************************************************
+		c = apmat.Clustering(r, a);		// the clustered node no.
+		System.out.println("c=");
 		for(int i=0; i<n; i++) {
 			System.out.printf("%d\n",c[i]);
 		}
+		int explr [] = unique(c);		// the exempler node no.
+
+		System.out.println();
+		System.out.println("The No. of Clusters=" +(explr.length));
+
+		// Data output
+		String Xfile = "C:\\JavaIO\\Output\\AP\\X.txt";
+		DataWriteDouble(Xfile,data);
+		String Cfile = "C:\\JavaIO\\Output\\AP\\Cluster.txt";
+		DataWriteInteger(Cfile,c);
+		String Efile = "C:\\JavaIO\\Output\\AP\\Exempler.txt";
+		DataWriteInteger(Efile,explr);
+		//String RAfile = "C:\\JavaIO\\Output\\AP\\RA.txt";
+		//DataWriteDouble(RAfile,mat.Sum(r,a));
 
 	}
 
@@ -240,8 +263,7 @@ public class AP {
 	        return ans;
 	    }
 
-
-	    private static void DataWrite(String file_name, double data[][]) {
+	    private static void DataWriteDouble(String file_name, double data[][]) {
 	    	int n = data.length;	// the number of rows
 	    	int m = data[0].length;	// the number of colmuns
 
@@ -261,6 +283,24 @@ public class AP {
 	        } catch (IOException ex) {
 	            ex.printStackTrace();
 	        }
+	    }
+
+	    private static void DataWriteInteger(String file_name, int data[]) {
+	    	int n = data.length;	// the number of rows
+
+	    	try {
+	            PrintWriter pw = new PrintWriter(file_name);
+	            for(int i=0; i<n; i++) {
+            		pw.format("%d\n", data[i]);
+                }
+	            pw.close();
+	        } catch (IOException ex) {
+	            ex.printStackTrace();
+	        }
+	    }
+
+	    private static int[] unique(int[] nums) {
+	        return Arrays.stream(nums).distinct().toArray();
 	    }
 
 

@@ -19,7 +19,7 @@ public class Mat {
 			double Z [][] = new double [n][n];
 			for(int i=0; i<n; i++) {
 		    	for(int j=0; j<n; j++) {
-		    		Z[j][i] = X[i][j] + Y[i][j];
+		    		Z[i][j] = X[i][j] + Y[i][j];
 		    	}
 	    	}
 	    	return Z;
@@ -30,7 +30,7 @@ public class Mat {
 			double Z [][] = new double [n][n];
 			for(int i=0; i<n; i++) {
 		    	for(int j=0; j<n; j++) {
-		    		Z[j][i] = (a*X[i][j]) + (b*Y[i][j]);
+		    		Z[i][j] = (a*X[i][j]) + (b*Y[i][j]);
 		    	}
 	    	}
 	    	return Z;

@@ -15,7 +15,6 @@ public class APMat {
 
 		switch (dist) {
 		case "Euclid":	// Metric: Euclidean distance
-
 			for(int i=0; i<n; i++) {
 				for(int j=i+1; j<n; j++) {
 					for(int k=0; k<d; k++) {
@@ -117,15 +116,15 @@ public class APMat {
 		int n=S.length;
 		double rho[][] = new double [n][n];
 		double SA[][] = new double [n][n];
-		SA = mat.Sum(S, A); // sum of similarity anf availability
+		SA = mat.Sum(S, A); // sum of similarity and availability
 		double max;
 
 		for(int i=0; i<n; i++) {
 			for(int j=0; j<n; j++) {
-				if(i==j) {
+				if(i==j) {		// diagonal elements
 					max=mat.FindVecMaxExp(S[i], j);
 					rho[i][j] = S[i][j] - max;
-				}else {
+				}else {			// nondiagonal elements
 					max=mat.FindVecMaxExp(SA[i], j);
 					rho[i][j] = S[i][j] - max;
 				}
@@ -156,7 +155,7 @@ public class APMat {
 							sum = sum + Math.max(0, R[k][j]);
 						}
 					}
-					alpha[i][j] = Math.min(0, R[j][j]+sum);
+					alpha[i][j] = Math.min(0, (R[j][j]+sum));
 					sum=0;
 				}
 			}
@@ -172,7 +171,6 @@ public class APMat {
 		boolean exmplr [] = new boolean [n];		// exempler vector
 		RA = mat.Sum(R, A); 						// sum of similarity and availability
 		List<Integer> list = new ArrayList<Integer>();
-
 
 		for(int i=0; i<n; i++) {	// if diag(r+a) > 0 then the node will be an exempler
 			if(RA[i][i]>0) {
@@ -190,13 +188,19 @@ public class APMat {
 			}
 		}
 
-		int tmp;
-		for(int i=0; i<n; i++) {	// determine cluster partition
-			if(exmplr[i]==true) {
-				C[i] = i;
-			}else {
-				tmp = mat.FindVecArgMax(RA1[i]);
-				C[i] = list.get(tmp);
+		if(list.size()!=0){
+			int tmp;
+			for(int i=0; i<n; i++) {	// determine cluster partition
+				if(exmplr[i]==true) {
+					C[i] = i;
+				}else {
+					tmp = mat.FindVecArgMax(RA1[i]);
+					C[i] = list.get(tmp);
+				}
+			}
+		}else{
+			for(int i=0; i<n; i++) {	// determine cluster partition
+				C[i]=i;
 			}
 		}
 
